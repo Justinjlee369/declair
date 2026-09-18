@@ -96,8 +96,22 @@ export default function AtlassianSetup() {
         <div className="rounded-xl border border-[#1E293B] bg-[#0E131F] p-5">
           <h2 className="font-medium mb-1">Confluence</h2>
           <p className="text-sm text-[#94A3B8]">
-            Confluence will be added as a separate app-user connector once its connector is configured. The current Jira connector ID is <code className="text-[#CBD5E1]">{JIRA_CONNECTOR_ID}</code>.
+            Declair uses the same Atlassian user connection for Confluence. If your Atlassian OAuth connector includes Confluence read scopes, your accessible Confluence site will appear here automatically.
           </p>
+          <div className="mt-3 text-sm">
+            {status?.confluence ? (
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle2 className="w-4 h-4" />
+                Connected: {status.confluence.site_name}
+              </div>
+            ) : status?.connected ? (
+              <div className="text-amber-400">
+                Atlassian connected, but no Confluence resource was returned. The connector needs Confluence read scopes.
+              </div>
+            ) : (
+              <div className="text-[#64748B]">Connect Jira above to authorize your Atlassian account.</div>
+            )}
+          </div>
         </div>
 
         {message && (
