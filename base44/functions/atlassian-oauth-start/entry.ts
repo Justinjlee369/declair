@@ -4,6 +4,7 @@ import { secrets } from "base44:runtime";
 const DEFAULT_SCOPES = [
   "offline_access",
   "read:jira-work",
+  "manage:jira-webhook",
   "read:jira-user",
   "read:confluence-content.all",
   "read:confluence-space.summary",
