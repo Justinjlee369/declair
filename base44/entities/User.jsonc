@@ -3,15 +3,14 @@
     "role": {
       "type": "string",
       "description": "The role of the user in the app",
-      "enum": [
-        "admin",
-        "user"
-      ]
+      "enum": ["admin", "user"]
+    },
+    "atlassian_oauth_state": {
+      "type": "string",
+      "description": "Short-lived Atlassian OAuth state value"
     }
   },
-  "required": [
-    "role"
-  ],
+  "required": ["role"],
   "name": "User",
   "type": "object"
 }
