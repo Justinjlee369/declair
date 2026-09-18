@@ -45,6 +45,7 @@ export default async function(req: Request): Promise<Response> {
 
     const resource = resources[0];
     await base44.asServiceRole.entities.AtlassianConnection.create({
+      owner_user_id: user.id,
       provider: "Jira + Confluence",
       cloud_id: resource.id,
       site_url: resource.url,
