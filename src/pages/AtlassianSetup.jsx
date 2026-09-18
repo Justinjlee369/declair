@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, ExternalLink, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const JIRA_CONNECTOR_ID = "Jozm6bBpODbSmcMpCrSDmFBAvT1jNXgb";
+const connectWithAtlassian = async () => {
 
 export default function AtlassianSetup() {
   const navigate = useNavigate();
@@ -27,10 +27,12 @@ export default function AtlassianSetup() {
     setWorking(true);
     setMessage("");
     try {
-      const authorizationUrl = await base44.connectors.connectAppUser(JIRA_CONNECTOR_ID);
+      const res = await base44.functions.invoke("atlassian-oauth-start", {});
+      const authorizationUrl = res.data?.authorization_url;
+      if (!authorizationUrl) throw new Error(res.data?.error || "Could not start Atlassian OAuth.");
       window.location.href = authorizationUrl;
     } catch (e) {
-      setMessage(e?.response?.data?.error || e.message || "Could not start Jira OAuth.");
+      setMessage(e?.response?.data?.error || e.message || "Could not start Atlassian OAuth.");
       setWorking(false);
     }
   };
@@ -61,7 +63,7 @@ export default function AtlassianSetup() {
           <h1 className="text-xl font-semibold">Atlassian connections</h1>
         </div>
         <p className="text-sm text-[#64748B] mb-8">
-          Connect Jira so Declair can reconstruct project context from live source changes.
+          Connect your Atlassian account so Declair can reconstruct project context from live Jira and Confluence changes.
         </p>
 
         <div className="rounded-xl border border-[#1E293B] bg-[#0E131F] p-5 mb-4">
@@ -74,14 +76,14 @@ export default function AtlassianSetup() {
             <ExternalLink className="w-4 h-4 ml-2" />
           </Button>
           <p className="text-xs text-[#64748B] mt-3">
-            The Jira connector is configured in Base44 with your OAuth client ID, secret and requested scopes. You do not need to enter the secret into Declair.
+            Declair uses your Atlassian OAuth 2.0 app directly. Your OAuth secret stays server-side and is never sent to the browser.
           </p>
         </div>
 
         <div className="rounded-xl border border-[#1E293B] bg-[#0E131F] p-5 mb-4">
           <h2 className="font-medium mb-1">2. Turn on live Jira updates</h2>
           <p className="text-sm text-[#94A3B8] mb-4">
-            After OAuth, register Declair as a Jira webhook listener for issues and comments that your Jira account can access.
+            After OAuth, register Declair as a Jira webhook listener for issues and comments your Atlassian account can access.
           </p>
           <Button onClick={registerJira} disabled={working || !status?.connected} variant="outline" className="border-[#334155]">
             Register Jira webhook
