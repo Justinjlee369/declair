@@ -1,0 +1,30 @@
+{
+  "name": "AtlassianToken",
+  "type": "object",
+  "properties": {
+    "owner_user_id": {
+      "type": "string"
+    },
+    "access_token_encrypted": {
+      "type": "string"
+    },
+    "refresh_token_encrypted": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "cloud_id": {
+      "type": "string"
+    },
+    "site_url": {
+      "type": "string"
+    },
+    "site_name": {
+      "type": "string"
+    }
+  }
+}
