@@ -1,0 +1,44 @@
+{
+  "name": "SourceEvent",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "enum": ["Jira", "Confluence"],
+      "description": "Connected source that emitted the event"
+    },
+    "event_type": {
+      "type": "string",
+      "description": "Atlassian webhook event type"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "Stable source webhook/event identifier used for deduplication"
+    },
+    "ref": {
+      "type": "string",
+      "description": "Issue key or Confluence content identifier"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable item title"
+    },
+    "delta": {
+      "type": "string",
+      "description": "Short description of what changed when available"
+    },
+    "url": {
+      "type": "string",
+      "description": "Canonical source URL"
+    },
+    "occurred_at": {
+      "type": "string",
+      "description": "Source event timestamp"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Raw webhook payload for later reconstruction"
+    }
+  },
+  "required": ["source", "event_type"]
+}
