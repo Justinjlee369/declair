@@ -1,0 +1,22 @@
+{
+  "name": "Thread",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Short label for the conversation thread"
+    },
+    "last_message": {
+      "type": "string",
+      "description": "Preview of the most recent message"
+    },
+    "scope": {
+      "type": "string",
+      "description": "Active source scope for the thread",
+      "default": "all"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

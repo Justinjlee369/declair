@@ -1,0 +1,45 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "thread_id": {
+      "type": "string",
+      "description": "Reference to the parent Thread"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant"
+      ],
+      "description": "Who authored the message"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message body (markdown for assistant)"
+    },
+    "citations": {
+      "type": "array",
+      "description": "Source event citations attached to assistant replies",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "ago": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "thread_id",
+    "role",
+    "content"
+  ]
+}
