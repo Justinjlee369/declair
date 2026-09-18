@@ -33,7 +33,8 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      const jiraResource = resources.find((r: any) => r.scopes?.some((s: string) => s.startsWith("read:jira"))) || resources[0];
+      const jiraResource = resources.find((r: any) => r.scopes?.some((s: string) => s.startsWith("read:jira")));
+      const confluenceResource = resources.find((r: any) => r.scopes?.some((s: string) => s.startsWith("read:confluence")));
 
       return Response.json({
         connected: true,
@@ -44,6 +45,13 @@ export default async function(req: Request): Promise<Response> {
               site_url: jiraResource.url,
               site_name: jiraResource.name || jiraResource.url,
               webhooks_registered: false,
+            }
+          : null,
+        confluence: confluenceResource
+          ? {
+              cloud_id: confluenceResource.id,
+              site_url: confluenceResource.url,
+              site_name: confluenceResource.name || confluenceResource.url,
             }
           : null,
         resources_count: resources.length,
