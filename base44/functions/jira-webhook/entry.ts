@@ -1,6 +1,25 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
 
+function b64urlToBytes(input: string) {
+  const base64 = input.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - input.length % 4) % 4);
+  const binary = atob(base64);
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+}
+function b64urlToJson(input: string) {
+  return JSON.parse(new TextDecoder().decode(b64urlToBytes(input)));
+}
+async function verifyJwt(token: string, secret: string) {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  const header = b64urlToJson(parts[0]);
+  const claims = b64urlToJson(parts[1]);
+  if (header.alg !== "HS256") return false;
+  if (claims.exp && Number(claims.exp) < Math.floor(Date.now() / 1000)) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), {name:"HMAC",hash:"SHA-256"}, false, ["verify"]);
+  return crypto.subtle.verify("HMAC", key, b64urlToBytes(parts[2]), new TextEncoder().encode(parts[0] + "." + parts[1]));
+}
+
 async function hmacSha256(secret: string, body: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -36,24 +55,27 @@ export default async function(req: Request): Promise<Response> {
 
   try {
     const rawBody = await req.text();
-    const secret = await secrets.get("JIRA_WEBHOOK_SECRET");
-    const signature = req.headers.get("x-hub-signature");
+    const payload = JSON.parse(rawBody);
+    const clientSecret = await secrets.get("ATLASSIAN_CLIENT_SECRET");
+    const authorization = req.headers.get("authorization") || "";
 
-    // Jira Cloud admin webhooks can be signed with HMAC-SHA256.
-    // Keep the secret in Base44 secrets; never put it in source control.
-    if (secret) {
-      if (!signature) return new Response("Missing signature", { status: 401 });
-      const [method, received] = signature.split("=", 2);
-      if (method !== "sha256" || !received) {
-        return new Response("Invalid signature", { status: 401 });
+    // OAuth 2.0 dynamic Jira webhooks use an Atlassian-signed bearer JWT.
+    // Keep HMAC verification as a fallback for manually configured webhooks.
+    if (authorization.startsWith("Bearer ")) {
+      if (!clientSecret || !(await verifyJwt(authorization.slice(7), clientSecret))) {
+        return new Response("Invalid webhook authorization", { status: 401 });
       }
-      const expected = await hmacSha256(secret, rawBody);
-      if (!safeEqual(expected, received)) {
-        return new Response("Invalid signature", { status: 401 });
+    } else {
+      const secret = await secrets.get("JIRA_WEBHOOK_SECRET");
+      const signature = req.headers.get("x-hub-signature");
+      if (secret) {
+        if (!signature) return new Response("Missing signature", { status: 401 });
+        const [method, received] = signature.split("=", 2);
+        if (method !== "sha256" || !received) return new Response("Invalid signature", { status: 401 });
+        const expected = await hmacSha256(secret, rawBody);
+        if (!safeEqual(expected, received)) return new Response("Invalid signature", { status: 401 });
       }
     }
-
-    const payload = JSON.parse(rawBody);
     const base44 = createClientFromRequest(req);
     const webhookId =
       req.headers.get("x-atlassian-webhook-identifier") ||
