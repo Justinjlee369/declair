@@ -1,0 +1,21 @@
+{
+  "name": "AtlassianConnection",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": ["Jira", "Confluence", "Jira + Confluence"]
+    },
+    "cloud_id": {"type": "string"},
+    "site_url": {"type": "string"},
+    "site_name": {"type": "string"},
+    "account_id": {"type": "string"},
+    "access_token": {"type": "string"},
+    "refresh_token": {"type": "string"},
+    "expires_at": {"type": "string"},
+    "scope": {"type": "string"},
+    "webhooks_registered": {"type": "boolean", "default": false},
+    "webhook_ids": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["provider"]
+}
