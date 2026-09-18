@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, MessageSquare } from 'lucide-react';
+import { Plus, MessageSquare, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const SOURCES = [
@@ -9,6 +10,7 @@ const SOURCES = [
 ];
 
 export default function LeftRail({ threads, currentThreadId, onSelectThread, onNewThread, eventCounts }) {
+  const navigate = useNavigate();
   return (
     <aside className="flex flex-col w-full h-full bg-[#0E131F] border-r border-[#1E293B]">
       {/* brand */}
@@ -45,6 +47,15 @@ export default function LeftRail({ threads, currentThreadId, onSelectThread, onN
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="px-3 pb-3 shrink-0">
+        <button
+          onClick={() => navigate("/settings/atlassian")}
+          className="w-full flex items-center gap-2 h-8 px-2 rounded-[6px] text-[13px] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#121824]"
+        >
+          <Settings className="w-3.5 h-3.5" /> Connections & settings
+        </button>
       </div>
 
       {/* threads */}
