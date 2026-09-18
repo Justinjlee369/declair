@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Settings, ExternalLink, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const connectWithAtlassian = async () => {
-
 export default function AtlassianSetup() {
   const navigate = useNavigate();
   const [status, setStatus] = useState(null);
