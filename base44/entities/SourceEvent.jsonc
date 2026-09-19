@@ -4,7 +4,10 @@
   "properties": {
     "source": {
       "type": "string",
-      "enum": ["Jira", "Confluence"],
+      "enum": [
+        "Jira",
+        "Confluence"
+      ],
       "description": "Connected source that emitted the event"
     },
     "event_type": {
@@ -35,10 +38,20 @@
       "type": "string",
       "description": "Source event timestamp"
     },
+    "account_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Atlassian account IDs referenced in the payload, used for personal-data reporting and erasure (GDPR)"
+    },
     "payload": {
       "type": "object",
       "description": "Raw webhook payload for later reconstruction"
     }
   },
-  "required": ["source", "event_type"]
+  "required": [
+    "source",
+    "event_type"
+  ]
 }

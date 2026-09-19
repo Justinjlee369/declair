@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Settings, ExternalLink, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, Clock3, ListChecks, FileText } from "lucide-react";
+import { Settings, ExternalLink, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, Clock3, ListChecks, FileText, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AtlassianSetup() {
@@ -11,6 +11,9 @@ export default function AtlassianSetup() {
   const [message, setMessage] = useState("");
   const [authUrl, setAuthUrl] = useState("");
   const [lastSynced, setLastSynced] = useState(null);
+  const [privacy, setPrivacy] = useState(null);
+  const [privacyWorking, setPrivacyWorking] = useState(false);
+  const [privacyLast, setPrivacyLast] = useState(() => { try { return window.localStorage.getItem("declair_privacy_last_report"); } catch { return null; } });
 
   const load = async () => {
     try {
@@ -74,6 +77,29 @@ export default function AtlassianSetup() {
     if (mins < 60) return `${mins} min ago`;
     const hours = Math.floor(mins / 60);
     return `${hours}h ago`;
+  };
+
+  const runPrivacyReport = async () => {
+    setPrivacyWorking(true);
+    setPrivacy(null);
+    try {
+      const res = await base44.functions.invoke("atlassian-privacy-report", {});
+      setPrivacy(res.data);
+      const now = new Date().toISOString();
+      setPrivacyLast(now);
+      try { window.localStorage.setItem("declair_privacy_last_report", now); } catch {}
+    } catch (e) {
+      const status = e?.response?.status || e?.status;
+      const body = e?.response?.data?.error || e?.data?.error;
+      setMessage(([body, e?.message, status ? `(HTTP ${status})` : null].filter(Boolean).join(" ")) || "Privacy report failed.");
+    } finally {
+      setPrivacyWorking(false);
+    }
+  };
+
+  const formatPrivacyLast = () => {
+    if (!privacyLast) return "Never run";
+    try { return new Date(privacyLast).toLocaleString(); } catch { return "Never run"; }
   };
 
   return (
@@ -168,6 +194,43 @@ export default function AtlassianSetup() {
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Personal data report (GDPR) */}
+        <div className="mt-6 rounded-2xl border border-[#1c2431] bg-gradient-to-b from-[#141a24] to-[#10151e] p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/30 shadow-[0_0_18px_rgba(6,182,212,0.2)]">
+                <ShieldCheck className="w-5 h-5 text-[#06B6D4]" />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-white">Personal data report</h2>
+                <p className="text-sm text-[#94A3B8] mt-0.5">Report stored Atlassian account IDs to Atlassian and erase data for closed accounts (GDPR).</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button onClick={runPrivacyReport} disabled={privacyWorking} variant="outline" className="border-[#1c2431] bg-transparent text-[#CBD5E1] hover:bg-[#1c2431] hover:text-white">
+              <RefreshCw className={`w-4 h-4 mr-2 ${privacyWorking ? "animate-spin" : ""}`} />
+              {privacyWorking ? "Reporting…" : "Run report now"}
+            </Button>
+            <span className="font-mono text-[11px] text-[#64748B]">Last run: {formatPrivacyLast()}</span>
+          </div>
+          {privacy && (
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Accounts", value: privacy.accounts },
+                { label: "Reported", value: privacy.reported },
+                { label: "Erased", value: privacy.erased },
+                { label: "Failures", value: privacy.failures },
+              ].map((s) => (
+                <div key={s.label} className="rounded-lg border border-[#1c2431] bg-[#0b0e14] px-3 py-2">
+                  <div className="font-mono text-lg text-white">{s.value}</div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-[#64748B]">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {authUrl && (

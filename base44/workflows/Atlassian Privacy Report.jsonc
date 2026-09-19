@@ -1,0 +1,45 @@
+{
+  "name": "Atlassian Privacy Report",
+  "description": "Reports stored Atlassian account IDs to the Personal Data Reporting API every week (GDPR) and erases personal data for closed accounts.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * 1",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "atlassian_privacy_report",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "report": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "atlassian-privacy-report",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Report personal data",
+            "description": "Atlassian Personal Data Reporting API"
+          }
+        }
+      }
+    ]
+  }
+}

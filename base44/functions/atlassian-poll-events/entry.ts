@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
+import { extractAccountIds } from "../../shared/atlassian-privacy.ts";
 
 function bytes(s: string) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
 function b64(x: Uint8Array) { let s = ""; for (const b of x) s += String.fromCharCode(b); return btoa(s); }
@@ -78,6 +79,7 @@ export default async function (req: Request): Promise<Response> {
                   delta: issue.fields?.status?.name ? `Status: ${issue.fields.status.name}` : "",
                   url: `${jira.url}/browse/${issue.key}`,
                   occurred_at: issue.fields?.updated ? new Date(issue.fields.updated).toISOString() : new Date().toISOString(),
+                  account_ids: Array.from(extractAccountIds(issue)),
                   payload: { issue }
                 });
                 created++;
@@ -102,6 +104,7 @@ export default async function (req: Request): Promise<Response> {
                   delta: page.version?.number ? `Version ${page.version.number}` : "",
                   url: `${conf.url}${page.url || ""}`,
                   occurred_at: page.version?.when ? new Date(page.version.when).toISOString() : new Date().toISOString(),
+                  account_ids: Array.from(extractAccountIds(page)),
                   payload: { page }
                 });
                 created++;
