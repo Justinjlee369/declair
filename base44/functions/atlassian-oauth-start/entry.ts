@@ -22,7 +22,7 @@ export default async function(req: Request): Promise<Response> {
 
     const state = randomState();
     const redirect = new URL(req.url);
-    redirect.pathname = "/api/functions/atlassian-oauth-callback";
+    redirect.pathname = "/functions/atlassian-oauth-callback";
     redirect.search = "";
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
