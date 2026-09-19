@@ -31,7 +31,7 @@ export default function AtlassianSetup() {
       const authorizationUrl = res?.data?.authorization_url || res?.authorization_url;
       if (!authorizationUrl) throw new Error(res?.data?.error || "Could not start Atlassian OAuth.");
       setAuthUrl(authorizationUrl);
-      window.location.href = authorizationUrl;
+      window.top.location.href = authorizationUrl;
     } catch (e) {
       const status = e?.response?.status || e?.status;
       const code = e?.response?.data?.code || e?.code;
