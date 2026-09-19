@@ -6,7 +6,7 @@ function bytes(s: string) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)
 function b64(x: Uint8Array) { let s = ""; for (const b of x) s += String.fromCharCode(b); return btoa(s); }
 async function key(secret: string) {
   const m = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: new TextEncoder().encode("declair-atlassian-token-v1"), iterations: 120000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: new TextEncoder().encode("declair-atlassian-token-v1"), iterations: 100000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
 }
 async function dec(v: string, secret: string) {
   const [iv, data] = v.split(".");
@@ -90,22 +90,30 @@ export default async function (req: Request): Promise<Response> {
 
         if (conf) {
           try {
-            const cr = await fetch(`https://api.atlassian.com/ex/confluence/${conf.id}/rest/api/search?cql=${encodeURIComponent('lastmodified >= now("-10m")')}&limit=50`, { headers: { Authorization: "Bearer " + access, Accept: "application/json" } });
+            const cr = await fetch(`https://api.atlassian.com/ex/confluence/${conf.id}/wiki/rest/api/search?cql=${encodeURIComponent('type=page ORDER BY lastmodified DESC')}&limit=25`, { headers: { Authorization: "Bearer " + access, Accept: "application/json" } });
             const cd = await cr.json();
             if (cr.ok && Array.isArray(cd.results)) {
               for (const page of cd.results) {
-                const external_id = `confluence:${conf.id}:${page.id || page.content?.id}:${page.version?.when || ""}`;
+                const pageId = String(page.id || page.content?.id || "");
+                if (!pageId) continue;
+                let full = page;
+                try {
+                  const pr = await fetch(`https://api.atlassian.com/ex/confluence/${conf.id}/wiki/rest/api/content/${pageId}?expand=body.storage,version,space`, { headers: { Authorization: "Bearer " + access, Accept: "application/json" } });
+                  const pd = await pr.json();
+                  if (pr.ok && pd?.id) full = pd;
+                } catch { /* keep search result */ }
+                const external_id = `confluence:${conf.id}:${pageId}:${full.version?.when || page.lastmodified || ""}`;
                 const dup = await base44.asServiceRole.entities.SourceEvent.filter({ external_id });
                 if (dup && dup.length) continue;
                 await base44.asServiceRole.entities.SourceEvent.create({
                   source: "Confluence", event_type: "page_updated", external_id,
-                  ref: String(page.id || page.content?.id || ""),
-                  title: page.title || page.content?.title || "Confluence page",
-                  delta: page.version?.number ? `Version ${page.version.number}` : "",
-                  url: `${conf.url}${page.url || ""}`,
-                  occurred_at: page.version?.when ? new Date(page.version.when).toISOString() : new Date().toISOString(),
-                  account_ids: Array.from(extractAccountIds(page)),
-                  payload: { page }
+                  ref: pageId,
+                  title: full.title || page.title || "Confluence page",
+                  delta: full.version?.number ? `Version ${full.version.number}` : (page.excerpt || ""),
+                  url: `${conf.url}${full._links?.webui || page.url || ""}`,
+                  occurred_at: full.version?.when ? new Date(full.version.when).toISOString() : (page.lastmodified ? new Date(page.lastmodified).toISOString() : new Date().toISOString()),
+                  account_ids: Array.from(extractAccountIds(full)),
+                  payload: { page: full, content: full.body?.storage?.value || page.excerpt || "" }
                 });
                 created++;
               }
