@@ -1,7 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
 
-const CLIENT_ID = "WsS93BP6XkmKryIqHi7ywLyNUfMWH16F";
 const SCOPES = ["read:jira-work","read:jira-user","manage:jira-webhook","read:confluence-content.all","read:confluence-space.summary","search:confluence","offline_access"];
 
 function randomState() {
@@ -15,8 +14,10 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me();
     if (!me) return Response.json({ error: "Authentication required" }, { status: 401 });
-    if (!secrets.get("ATLASSIAN_CLIENT_SECRET")) {
-      return Response.json({ error: "Atlassian OAuth server secret is not configured.", code: "ATLASSIAN_CLIENT_SECRET_MISSING" }, { status: 503 });
+    const CLIENT_ID = secrets.get("ATLASSIAN_CLIENT_ID");
+    const CLIENT_SECRET = secrets.get("ATLASSIAN_CLIENT_SECRET");
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      return Response.json({ error: "Atlassian OAuth credentials are not configured. Set ATLASSIAN_CLIENT_ID and ATLASSIAN_CLIENT_SECRET in the Secrets page.", code: "ATLASSIAN_CREDENTIALS_MISSING" }, { status: 503 });
     }
 
     const state = randomState();

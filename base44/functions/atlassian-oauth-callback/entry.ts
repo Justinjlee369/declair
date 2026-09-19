@@ -1,8 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
 
-const CLIENT_ID = "WsS93BP6XkmKryIqHi7ywLyNUfMWH16F";
-
 function b64(bytes: Uint8Array) { let s=""; for (const b of bytes) s+=String.fromCharCode(b); return btoa(s); }
 async function key(secret: string) {
   const m=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"PBKDF2",false,["deriveKey"]);
@@ -25,11 +23,12 @@ export default async function(req: Request): Promise<Response> {
     const s=states?.[0];
     if (!s || new Date(s.expires_at).getTime()<Date.now()) return new Response("OAuth state is invalid or expired. Start again from Declair.",{status:400});
 
+    const clientId=secrets.get("ATLASSIAN_CLIENT_ID");
     const secret=secrets.get("ATLASSIAN_CLIENT_SECRET");
-    if (!secret) return new Response("Atlassian OAuth server secret is not configured.",{status:503});
+    if (!clientId || !secret) return new Response("Atlassian OAuth credentials are not configured. Set ATLASSIAN_CLIENT_ID and ATLASSIAN_CLIENT_SECRET in the Secrets page.",{status:503});
 
     const tr=await fetch("https://auth.atlassian.com/oauth/token",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({
-      grant_type:"authorization_code",client_id:CLIENT_ID,client_secret:secret,code,redirect_uri:s.redirect_uri
+      grant_type:"authorization_code",client_id:clientId,client_secret:secret,code,redirect_uri:s.redirect_uri
     })});
     const td=await tr.json();
     if (!tr.ok || !td.access_token) return new Response("Atlassian token exchange failed: "+(td.error_description||td.error||"unknown error"),{status:502});
