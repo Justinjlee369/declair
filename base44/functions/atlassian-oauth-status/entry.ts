@@ -4,7 +4,7 @@ import { secrets } from "base44:runtime";
 function bytes(s:string){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
 async function key(secret:string){
  const m=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"PBKDF2",false,["deriveKey"]);
- return crypto.subtle.deriveKey({name:"PBKDF2",salt:new TextEncoder().encode("declair-atlassian-token-v1"),iterations:120000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["decrypt"]);
+ return crypto.subtle.deriveKey({name:"PBKDF2",salt:new TextEncoder().encode("declair-atlassian-token-v1"),iterations:100000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["decrypt"]);
 }
 async function dec(v:string,secret:string){
  const [iv,data]=v.split("."); const p=await crypto.subtle.decrypt({name:"AES-GCM",iv:bytes(iv)},await key(secret),bytes(data));
