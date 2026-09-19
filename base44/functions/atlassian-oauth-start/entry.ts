@@ -21,9 +21,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const state = randomState();
-    const redirect = new URL(req.url);
-    redirect.pathname = "/functions/atlassian-oauth-callback";
-    redirect.search = "";
+    const redirect = new URL("https://declair-context-flow.base44.app/functions/atlassian-oauth-callback");
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const old = await base44.asServiceRole.entities.AtlassianOAuthState.filter({ owner_user_id: me.id });
