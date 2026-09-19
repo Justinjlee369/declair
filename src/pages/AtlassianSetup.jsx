@@ -35,15 +35,15 @@ export default function AtlassianSetup() {
     }
   };
 
-  const registerJira = async () => {
+  const pollNow = async () => {
     setWorking(true);
     setMessage("");
     try {
-      const res = await base44.functions.invoke("atlassian-register-jira-webhook", {});
-      setMessage(res.data?.ok ? "Jira webhook registered. Changes will now flow into Declair." : "Jira webhook registration completed.");
-      await load();
+      const res = await base44.functions.invoke("atlassian-poll-events", {});
+      const c = res.data?.created ?? 0;
+      setMessage(c > 0 ? `Fetched ${c} new event${c === 1 ? "" : "s"} from Jira & Confluence.` : "No new activity since the last fetch.");
     } catch (e) {
-      setMessage(e?.response?.data?.error || e.message || "Could not register Jira webhook.");
+      setMessage(e?.response?.data?.error || e.message || "Could not fetch Atlassian activity.");
     } finally {
       setWorking(false);
     }
@@ -79,16 +79,16 @@ export default function AtlassianSetup() {
         </div>
 
         <div className="rounded-xl border border-[#1E293B] bg-[#0E131F] p-5 mb-4">
-          <h2 className="font-medium mb-1">2. Turn on live Jira updates</h2>
+          <h2 className="font-medium mb-1">2. Live Jira & Confluence updates</h2>
           <p className="text-sm text-[#94A3B8] mb-4">
-            After OAuth, register Declair as a Jira webhook listener for issues and comments your Atlassian account can access.
+            Declair polls your connected Jira and Confluence accounts every 5 minutes for new activity and feeds it into the Living Stream.
           </p>
-          <Button onClick={registerJira} disabled={working || !status?.connected} variant="outline" className="border-[#334155]">
-            Register Jira webhook
+          <Button onClick={pollNow} disabled={working || !status?.connected} variant="outline" className="border-[#334155]">
+            {working ? "Fetching…" : "Fetch recent activity now"}
           </Button>
-          {status?.connection?.webhooks_registered && (
+          {status?.connected && (
             <div className="flex items-center gap-2 text-sm text-emerald-400 mt-3">
-              <CheckCircle2 className="w-4 h-4" /> Jira webhook registered
+              <CheckCircle2 className="w-4 h-4" /> Polling active (every 5 min)
             </div>
           )}
         </div>

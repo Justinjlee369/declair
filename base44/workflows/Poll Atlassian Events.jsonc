@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "poll_atlassian_events",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "poll": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "atlassian-poll-events",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Poll Atlassian activity",
+            "description": "Jira + Confluence, last 10 min"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Poll Atlassian Events",
+  "description": "Polls connected Jira and Confluence accounts every 5 minutes for recent activity and stores new events in SourceEvent."
+}

@@ -5,7 +5,7 @@ import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import LeftRail from '@/components/declair/LeftRail';
 import ChatCanvas from '@/components/declair/ChatCanvas';
 import ContextPanel from '@/components/declair/ContextPanel';
-import { seedEvents, nextEvent, agoString } from '@/lib/mockEvents';
+import { agoString } from '@/lib/mockEvents';
 
 export default function Home() {
   const isMobile = useIsMobile();
@@ -13,7 +13,7 @@ export default function Home() {
   const [currentId, setCurrentId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState(() => seedEvents());
+  const [events, setEvents] = useState([]);
   const [anchor, setAnchor] = useState('Live Now');
   const [mobileThreads, setMobileThreads] = useState(false);
   const [mobileContext, setMobileContext] = useState(false);
@@ -51,13 +51,41 @@ export default function Home() {
     };
   }, [currentId]);
 
-  // simulate live webhook arrivals
-  useEffect(() => {
-    const id = setInterval(() => {
-      setEvents((prev) => [nextEvent(), ...prev].slice(0, 40));
-    }, 9000);
-    return () => clearInterval(id);
+  const mapEvent = (e) => ({
+    id: e.id,
+    source: e.source,
+    type: e.event_type,
+    title: e.title,
+    ref: e.ref,
+    delta: e.delta,
+    url: e.url,
+    timestamp: e.occurred_at ? new Date(e.occurred_at).getTime() : new Date(e.created_date).getTime()
+  });
+
+  const loadEvents = useCallback(async () => {
+    try {
+      const list = await base44.entities.SourceEvent.list('-created_date', 50);
+      setEvents(list.map(mapEvent));
+    } catch {
+      setEvents([]);
+    }
   }, []);
+
+  // live source events from connected integrations
+  useEffect(() => {
+    loadEvents();
+    const unsubscribe = base44.entities.SourceEvent.subscribe((event) => {
+      if (event.type === 'create') {
+        setEvents((prev) => {
+          if (prev.some((e) => e.id === event.data.id)) return prev;
+          return [mapEvent(event.data), ...prev].slice(0, 50);
+        });
+      } else if (event.type === 'delete') {
+        setEvents((prev) => prev.filter((e) => e.id !== event.data.id));
+      }
+    });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
+  }, [loadEvents]);
 
   const eventCounts = events.reduce((acc, e) => {
     acc[e.source] = (acc[e.source] || 0) + 1;
