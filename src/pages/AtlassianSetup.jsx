@@ -9,6 +9,7 @@ export default function AtlassianSetup() {
   const [status, setStatus] = useState(null);
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState("");
+  const [authUrl, setAuthUrl] = useState("");
 
   const load = async () => {
     try {
@@ -24,13 +25,19 @@ export default function AtlassianSetup() {
   const connect = async () => {
     setWorking(true);
     setMessage("");
+    setAuthUrl("");
     try {
       const res = await base44.functions.invoke("atlassian-oauth-start", {});
-      const authorizationUrl = res.data?.authorization_url;
-      if (!authorizationUrl) throw new Error(res.data?.error || "Could not start Atlassian OAuth.");
+      const authorizationUrl = res?.data?.authorization_url || res?.authorization_url;
+      if (!authorizationUrl) throw new Error(res?.data?.error || "Could not start Atlassian OAuth.");
+      setAuthUrl(authorizationUrl);
       window.location.href = authorizationUrl;
     } catch (e) {
-      setMessage(e?.response?.data?.error || e.message || "Could not start Atlassian OAuth.");
+      const status = e?.response?.status || e?.status;
+      const code = e?.response?.data?.code || e?.code;
+      const body = e?.response?.data?.error || e?.response?.data?.message || e?.data?.error;
+      setMessage(([body, e?.message, code ? `[${code}]` : null, status ? `(HTTP ${status})` : null].filter(Boolean).join(" ")) || "Could not start Atlassian OAuth.");
+    } finally {
       setWorking(false);
     }
   };
@@ -43,7 +50,9 @@ export default function AtlassianSetup() {
       const c = res.data?.created ?? 0;
       setMessage(c > 0 ? `Fetched ${c} new event${c === 1 ? "" : "s"} from Jira & Confluence.` : "No new activity since the last fetch.");
     } catch (e) {
-      setMessage(e?.response?.data?.error || e.message || "Could not fetch Atlassian activity.");
+      const status = e?.response?.status || e?.status;
+      const body = e?.response?.data?.error || e?.response?.data?.message || e?.data?.error;
+      setMessage(([body, e?.message, status ? `(HTTP ${status})` : null].filter(Boolean).join(" ")) || "Could not fetch Atlassian activity.");
     } finally {
       setWorking(false);
     }
@@ -73,6 +82,14 @@ export default function AtlassianSetup() {
             {status?.connected ? "Reconnect Jira" : "Connect Jira"}
             <ExternalLink className="w-4 h-4 ml-2" />
           </Button>
+          {authUrl && (
+            <div className="mt-4 rounded-lg border border-[#06B6D4]/40 bg-[#06B6D4]/10 p-3">
+              <p className="text-sm text-[#F8FAFC] mb-2">If Atlassian did not open automatically, use this link to approve access in a new tab.</p>
+              <a href={authUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#06B6D4] text-[#0A0D14] font-medium px-3 py-2 rounded-md hover:bg-[#00F0FF] text-sm">
+                Open Atlassian <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          )}
           <p className="text-xs text-[#64748B] mt-3">
             Declair uses your Atlassian OAuth 2.0 app directly. Your OAuth secret stays server-side and is never sent to the browser.
           </p>
