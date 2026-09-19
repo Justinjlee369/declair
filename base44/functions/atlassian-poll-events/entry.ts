@@ -103,9 +103,7 @@ export default async function (req: Request): Promise<Response> {
                   if (pr.ok && pd?.id) full = pd;
                 } catch { /* keep search result */ }
                 const external_id = `confluence:${conf.id}:${pageId}:${full.version?.when || page.lastmodified || ""}`;
-                const dup = await base44.asServiceRole.entities.SourceEvent.filter({ external_id });
-                if (dup && dup.length) continue;
-                await base44.asServiceRole.entities.SourceEvent.create({
+                const eventRecord = {
                   source: "Confluence", event_type: "page_updated", external_id,
                   ref: pageId,
                   title: full.title || page.title || "Confluence page",
@@ -114,8 +112,14 @@ export default async function (req: Request): Promise<Response> {
                   occurred_at: full.version?.when ? new Date(full.version.when).toISOString() : (page.lastmodified ? new Date(page.lastmodified).toISOString() : new Date().toISOString()),
                   account_ids: Array.from(extractAccountIds(full)),
                   payload: { page: full, content: full.body?.storage?.value || page.excerpt || "" }
-                });
-                created++;
+                };
+                const dup = await base44.asServiceRole.entities.SourceEvent.filter({ external_id });
+                if (dup && dup.length) {
+                  await base44.asServiceRole.entities.SourceEvent.update(dup[0].id, eventRecord);
+                } else {
+                  await base44.asServiceRole.entities.SourceEvent.create(eventRecord);
+                  created++;
+                }
               }
             }
           } catch { /* ignore per-resource errors */ }
