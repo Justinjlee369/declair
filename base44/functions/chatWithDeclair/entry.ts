@@ -20,7 +20,8 @@ export default async function(req: Request): Promise<Response> {
     const eventsBlock = events.length
       ? events.map((e, i) => {
           const head = `[${i + 1}] ${e.source} ${e.ref || ''} — ${e.title} (${e.ago || ''})`;
-          const content = e.content ? `\n    content: ${e.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 12000)}` : '';\n          return (e.delta ? `${head}\n    delta: ${e.delta}` : head) + content;
+          const content = e.content ? `\n    content: ${e.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 12000)}` : '';
+          return (e.delta ? `${head}\n    delta: ${e.delta}` : head) + content;
         }).join('\n')
       : '(no live events have arrived yet)';
 
