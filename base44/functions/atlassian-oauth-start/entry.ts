@@ -1,7 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
 
-const SCOPES = ["read:jira-work","read:jira-user","read:confluence-content.all","read:confluence-space.summary","search:confluence","offline_access"];
+const SCOPES = ["read:jira-work","read:jira-user","manage:jira-webhook","read:confluence-content.all","read:confluence-space.summary","search:confluence","offline_access"];
 
 function randomState() {
   const bytes = new Uint8Array(32);
@@ -21,7 +21,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const state = randomState();
-    const redirect = new URL("https://declair-context-flow.base44.app/functions/atlassian-oauth-callback");
+    const redirect = new URL("https://declair-context-flow.base44.app/api/functions/atlassian-oauth-callback");
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const old = await base44.asServiceRole.entities.AtlassianOAuthState.filter({ owner_user_id: me.id });
