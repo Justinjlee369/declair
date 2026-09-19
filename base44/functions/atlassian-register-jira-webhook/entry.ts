@@ -3,7 +3,7 @@ import { secrets } from "base44:runtime";
 const CLIENT_ID="WsS93BP6XkmKryIqHi7ywLyNUfMWH16F";
 function bytes(s:string){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
 function b64(x:Uint8Array){let s="";for(const b of x)s+=String.fromCharCode(b);return btoa(s);}
-async function key(secret:string){const m=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:new TextEncoder().encode("declair-atlassian-token-v1"),iterations:120000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);}
+async function key(secret:string){const m=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:new TextEncoder().encode("declair-atlassian-token-v1"),iterations:100000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);}
 async function dec(v:string,secret:string){const [iv,data]=v.split(".");const p=await crypto.subtle.decrypt({name:"AES-GCM",iv:bytes(iv)},await key(secret),bytes(data));return new TextDecoder().decode(p);}
 async function enc(v:string,secret:string){const iv=crypto.getRandomValues(new Uint8Array(12));const c=await crypto.subtle.encrypt({name:"AES-GCM",iv},await key(secret),new TextEncoder().encode(v));return b64(iv)+"."+b64(new Uint8Array(c));}
 export default async function(req:Request):Promise<Response>{
