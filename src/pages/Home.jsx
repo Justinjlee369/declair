@@ -59,6 +59,7 @@ export default function Home() {
     ref: e.ref,
     delta: e.delta,
     url: e.url,
+    content: e.payload?.content || e.payload?.page?.body?.storage?.value || '',
     timestamp: e.occurred_at ? new Date(e.occurred_at).getTime() : new Date(e.created_date).getTime()
   });
 
@@ -117,6 +118,7 @@ export default function Home() {
         ref: e.ref,
         title: e.title,
         delta: e.delta,
+        content: e.content,
         ago: agoString(e.timestamp)
       }));
 
