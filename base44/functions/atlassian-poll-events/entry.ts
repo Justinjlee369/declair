@@ -31,11 +31,13 @@ export default async function (req: Request): Promise<Response> {
 
     let tokens: any[];
     if (me) tokens = await base44.asServiceRole.entities.AtlassianToken.filter({ owner_user_id: me.id });
-    else tokens = await base44.asServiceRole.entities.AtlassianToken.list("-created_date", 100);
+    if (me && (!tokens || tokens.length === 0) && me.role === "admin") tokens = await base44.asServiceRole.entities.AtlassianToken.list("-created_date", 100);
+    if (!me) tokens = await base44.asServiceRole.entities.AtlassianToken.list("-created_date", 100);
 
     if (!tokens || tokens.length === 0) return Response.json({ ok: true, processed: 0, created: 0 });
 
     let created = 0, processed = 0;
+    const errors: any[] = [];
     for (const token of tokens) {
       try {
         let access = await dec(token.access_token_encrypted, secret);
@@ -53,12 +55,17 @@ export default async function (req: Request): Promise<Response> {
               refresh_token_encrypted: td.refresh_token ? await enc(td.refresh_token, secret) : token.refresh_token_encrypted,
               expires_at: new Date(Date.now() + Number(td.expires_in || 3600) * 1000).toISOString()
             });
+          } else {
+            errors.push({ token: token.id, stage: "refresh", status: tr.status, error: td?.error || td?.error_description || "refresh failed" });
           }
         }
 
         const rr = await fetch("https://api.atlassian.com/oauth/token/accessible-resources", { headers: { Authorization: "Bearer " + access, Accept: "application/json" } });
         const resources = await rr.json();
-        if (!rr.ok || !Array.isArray(resources)) continue;
+        if (!rr.ok || !Array.isArray(resources)) {
+          errors.push({ token: token.id, stage: "accessible-resources", status: rr.status, error: (resources && (resources.error || resources.message)) || "accessible-resources failed" });
+          continue;
+        }
         processed++;
 
         const jira = resources.find((r: any) => r.scopes?.some((s: string) => s.startsWith("read:jira")));
@@ -102,6 +109,7 @@ export default async function (req: Request): Promise<Response> {
                   const pd = await pr.json();
                   if (pr.ok && pd?.id) full = pd;
                 } catch { /* keep search result */ }
+                const rawContent = full.body?.storage?.value || page.excerpt || "";
                 const external_id = `confluence:${conf.id}:${pageId}:${full.version?.when || page.lastmodified || ""}`;
                 const eventRecord = {
                   source: "Confluence", event_type: "page_updated", external_id,
@@ -111,7 +119,15 @@ export default async function (req: Request): Promise<Response> {
                   url: `${conf.url}${full._links?.webui || page.url || ""}`,
                   occurred_at: full.version?.when ? new Date(full.version.when).toISOString() : (page.lastmodified ? new Date(page.lastmodified).toISOString() : new Date().toISOString()),
                   account_ids: Array.from(extractAccountIds(full)),
-                  payload: { page: full, content: full.body?.storage?.value || page.excerpt || "" }
+                  payload: {
+                    content: rawContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000),
+                    page: {
+                      id: full.id, title: full.title,
+                      space: full.space?.name || full.space?.key,
+                      version: full.version?.number,
+                      webui: full._links?.webui
+                    }
+                  }
                 };
                 const dup = await base44.asServiceRole.entities.SourceEvent.filter({ external_id });
                 if (dup && dup.length) {
@@ -124,9 +140,9 @@ export default async function (req: Request): Promise<Response> {
             }
           } catch { /* ignore per-resource errors */ }
         }
-      } catch { /* ignore per-token errors */ }
+      } catch (e) { errors.push({ token: token.id, stage: "token", error: e?.message || String(e) }); }
     }
-    return Response.json({ ok: true, processed, created });
+    return Response.json({ ok: true, processed, created, errors });
   } catch (e) {
     return Response.json({ error: e?.message || "Poll failed" }, { status: 500 });
   }
