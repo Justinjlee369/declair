@@ -119,6 +119,7 @@ export default function Home() {
         title: e.title,
         delta: e.delta,
         content: e.content,
+        url: e.url,
         ago: agoString(e.timestamp)
       }));
 

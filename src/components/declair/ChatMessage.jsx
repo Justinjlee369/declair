@@ -25,16 +25,33 @@ export default function ChatMessage({ message }) {
       </div>
       {message.citations && message.citations.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {message.citations.map((c, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1.5 h-6 px-2 rounded-[6px] bg-[#0E131F] border border-[#1E293B] font-mono text-[11px] text-[#F8FAFC]"
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: SOURCE_COLOR[c.source] || '#06B6D4' }} />
-              via {c.source} {c.ref}
-              {c.ago && <span className="text-[#64748B]"> · {c.ago}</span>}
-            </span>
-          ))}
+          {message.citations.map((c, i) => {
+            const inner = (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: SOURCE_COLOR[c.source] || '#06B6D4' }} />
+                via {c.source} {c.ref}
+                {c.ago && <span className="text-[#64748B]"> · {c.ago}</span>}
+              </>
+            );
+            return c.url ? (
+              <a
+                key={i}
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-6 px-2 rounded-[6px] bg-[#0E131F] border border-[#1E293B] font-mono text-[11px] text-[#06B6D4] hover:border-[#06B6D4]/50 hover:bg-[#0b1620] transition-colors"
+              >
+                {inner}
+              </a>
+            ) : (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 h-6 px-2 rounded-[6px] bg-[#0E131F] border border-[#1E293B] font-mono text-[11px] text-[#F8FAFC]"
+              >
+                {inner}
+              </span>
+            );
+          })}
         </div>
       )}
     </div>
